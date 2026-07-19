@@ -3,78 +3,60 @@ from urllib.parse import urlparse
 from decouple import config
 
 
-TOKEN = config("TOKEN")
-
-
 def shorten_link(headers, cookies, url):
     connect_url = "https://clc.li/api/url/add"
 
-    json = {
+    long_url = {
         "url": url
     }
 
     response = requests.post(
         url=connect_url,
         headers=headers,
-        json=json,
+        json=long_url,
         cookies=cookies
     )
     response.raise_for_status()
-    shorting_url = response.json().get("shorturl")
+    short_url = response.json().get("shorturl")
 
-    if shorting_url:
-        parsed = urlparse(shorting_url)
+    if short_url:
+        parsed = urlparse(short_url)
         return f"{parsed.netloc}{parsed.path}"
 
 
 def count_clicks(headers, cookies, url):
-    connect_url = f"https://clc.li/api/urls?short={url}"
+    payload = {'short': url}
+    connect_url = "https://clc.li/api/urls"
 
     response = requests.get(
         url=connect_url,
         headers=headers,
-        cookies=cookies
+        cookies=cookies,
+        params=payload
     )
     response.raise_for_status()
-    urls = response.json().get("data")
-
-    if urls:
-        return int(urls.get("clicks"))
-    else:
-        return None
+    return response.json().get("data").get("clicks")
 
 
 def is_bitlink(headers, cookies, url):
-    connect_url = f"https://clc.li/api/urls?short={url}"
+    payload = {'short': url}
+    connect_url = "https://clc.li/api/urls"
 
     response = requests.get(
         url=connect_url,
         headers=headers,
-        cookies=cookies
+        cookies=cookies,
+        params=payload
     )
-
     response.raise_for_status()
-    urls = response.json().get("data")
-
-    if urls:
-        stats_clicks = count_clicks(
-            headers,
-            cookies,
-            url
-        )
-        return stats_clicks
-    else:
-        shorten = shorten_link(
-            headers,
-            cookies,
-            url
-        )
-        return shorten
+    return response.json().get("data") is not None
 
 
 def main():
+    token = config("LINK_SHORTENING_TOKEN")
+
     headers = {
-        "Authorization": f"Bearer {TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
 
@@ -85,13 +67,12 @@ def main():
     link = input("Введите URL для сокращения: ").strip()
 
     try:
-        link = is_bitlink(headers, cookies, link)
-        if link is None:
-            print("Неверная ссылка для сокращения")
-        elif isinstance(link, int):
-            print(f"Количество кликов по короткой ссылке: {link}")
+        if is_bitlink(headers, cookies, link):
+            print("Количество кликов по короткой ссылке:", end=" ")
+            print(count_clicks(headers, cookies, link))
         else:
-            print(f"Короткая ссылка {link}")
+            print("Короткая ссылка", end=" ")
+            print(shorten_link(headers, cookies, link))
 
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при запросе к API: {e.response.status_code} ")
