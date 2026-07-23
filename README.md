@@ -24,7 +24,7 @@ cd Count-the-clicks-on-the-links
 Создай в корне проекта файл `.env` и добавь туда такие переменные:
 
 ```env
-LINK_SHORTENING_TOKEN=your_token_here
+CLCLI_TOKEN=ваш_токен_здесь
 ```
 
 ### Установите зависимости:

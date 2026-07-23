@@ -53,7 +53,7 @@ def is_bitlink(headers, cookies, url):
 
 
 def main():
-    token = config("CLCLI_LINK_SHORTENING_TOKEN")
+    token = config("CLCLI_TOKEN")
 
     headers = {
         "Authorization": f"Bearer {token}",
